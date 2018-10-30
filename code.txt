@@ -1,0 +1,103 @@
+//initialize variable for X and Y values
+let waardeY = 0
+let waardeX = 0
+
+forever(function () {
+    //puts the values from the accelerometor into variables
+    waardeX = input.acceleration(Dimension.X)
+    waardeY = input.acceleration(Dimension.Y)
+    //logs the values to the console
+    console.log("X:" + waardeX)
+    console.log("Y:" + waardeY)
+
+    //calculate the position of the servo's
+    moveServo()
+
+    //caluculate position of indicator light (in the simulator the Y value is inverted)
+    changeLights()
+
+    pause(20) //prevent overloading  the servo's
+})
+
+function moveServo() {
+    //convert values from accelerometor to position for servo
+    let servoX = 90 / 100 * (waardeX / 1200 * 100) + 90
+    let servoY = 90 / 100 * (waardeY / 1200 * 100) + 90
+
+    //log the position of each servo to the console
+    console.log("servoX:" + servoX)
+    console.log("servoY:" + servoY)
+
+    //prevent the servo's from breaking by limiting to values from 0 to 180
+    if (servoX > 180) {
+        servoX = 180
+    }
+    if (servoX < 0) {
+        servoX = 0
+    }
+    if (servoY > 180) {
+        servoY = 180
+    }
+    if (servoY < 0) {
+        servoY = 0
+    }
+
+    //write the new position value to the servo's
+    pins.A1.servoWrite(servoX)
+    pins.A2.servoWrite(servoY)
+}
+
+function changeLights() {
+    //variable containing the number of the led that should turn a color to indicate direction of tilt
+    let activeLight = 0
+
+    //when should the lights turn red
+    let maxNegativeTilt = -200
+    let maxPositiveTilt = 200
+
+    //when either the X or Y value crosses the tilt threshold in any direction
+    if (waardeX < maxNegativeTilt || waardeY < maxNegativeTilt || waardeX > maxPositiveTilt || waardeY > maxPositiveTilt) {
+        //this divides the board into 2 halves
+        if (waardeX < 0) {
+            if (waardeY > 300) {
+                activeLight = 4
+            }
+            if (waardeY < 300 && waardeY > 150 && waardeX < -150) {
+                activeLight = 3
+            }
+            if (waardeY < 150 && waardeY > -150) {
+                activeLight = 2
+            }
+            if (waardeY < -150 && waardeY > -300 && waardeX < -150) {
+                activeLight = 1
+            }
+            if (waardeY < -300) {
+                activeLight = 0
+            }
+        }
+        //the second half
+        if (waardeX > 0) {
+            if (waardeY > 300) {
+                activeLight = 5
+            }
+            if (waardeY < 300 && waardeY > 150 && waardeX > 150) {
+                activeLight = 6
+            }
+            if (waardeY < 150 && waardeY > -150) {
+                activeLight = 7
+            }
+            if (waardeY < -150 && waardeY > -300 && waardeX > 150) {
+                activeLight = 8
+            }
+            if (waardeY < -300) {
+                activeLight = 9
+            }
+        }
+
+        light.setAll(0xff0000)   //first all lights are set to red
+        light.setPixelColor(activeLight, 0x0000ff) //then the indicator light is set to a different color
+    } else {
+        //if the tilt value doesnt cross the threshold, all lights are set to green
+        light.setAll(0x00ff00)
+    }
+}
